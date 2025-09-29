@@ -9,6 +9,9 @@ dist/
 .env.local
 .env.*.local
 
+# Claude configuration
+.claude/mcp.json
+
 # IDE
 .vscode/
 .idea/

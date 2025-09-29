@@ -13,7 +13,6 @@ import { userTools } from './tools/users.js';
 
 const ConfigSchema = z.object({
   baseUrl: z.string().url().describe('JIRA instance base URL'),
-  email: z.string().email().describe('Email address for authentication'),
   apiToken: z.string().describe('JIRA API token'),
   maxResults: z.number().optional().default(50).describe('Default max results per request'),
   timeout: z.number().optional().default(30000).describe('Request timeout in milliseconds')
@@ -143,14 +142,12 @@ export class JiraMCPServer {
   private async loadConfig(): Promise<JiraConfig | null> {
     // Try to load from environment variables
     const baseUrl = process.env.JIRA_BASE_URL;
-    const email = process.env.JIRA_EMAIL;
     const apiToken = process.env.JIRA_API_TOKEN;
 
-    if (baseUrl && email && apiToken) {
+    if (baseUrl && apiToken) {
       try {
         const config = ConfigSchema.parse({
           baseUrl,
-          email,
           apiToken,
           maxResults: process.env.JIRA_MAX_RESULTS ? parseInt(process.env.JIRA_MAX_RESULTS, 10) : 50,
           timeout: process.env.JIRA_TIMEOUT ? parseInt(process.env.JIRA_TIMEOUT, 10) : 30000
@@ -168,13 +165,11 @@ export class JiraMCPServer {
       dotenv.config();
 
       const envBaseUrl = process.env.JIRA_BASE_URL;
-      const envEmail = process.env.JIRA_EMAIL;
       const envApiToken = process.env.JIRA_API_TOKEN;
 
-      if (envBaseUrl && envEmail && envApiToken) {
+      if (envBaseUrl && envApiToken) {
         const config = ConfigSchema.parse({
           baseUrl: envBaseUrl,
-          email: envEmail,
           apiToken: envApiToken,
           maxResults: process.env.JIRA_MAX_RESULTS ? parseInt(process.env.JIRA_MAX_RESULTS, 10) : 50,
           timeout: process.env.JIRA_TIMEOUT ? parseInt(process.env.JIRA_TIMEOUT, 10) : 30000

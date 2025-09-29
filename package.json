@@ -1,5 +1,5 @@
 {
-  "name": "@mcp/jira-server",
+  "name": "@jl-0/jira-mcp-server",
   "version": "0.1.0",
   "description": "MCP server for JIRA REST API integration",
   "type": "module",
@@ -26,7 +26,7 @@
     "api",
     "typescript"
   ],
-  "author": "",
+  "author": "Jeff Leach",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.6.0",
@@ -55,10 +55,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/jira-mcp-server.git"
+    "url": "https://github.com/jl-0/JIRA-API-MCP.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/jira-mcp-server/issues"
+    "url": "https://github.com/jl-0/JIRA-API-MCP/issues"
   },
-  "homepage": "https://github.com/yourusername/jira-mcp-server#readme"
+  "homepage": "https://github.com/jl-0/JIRA-API-MCP#readme"
 }

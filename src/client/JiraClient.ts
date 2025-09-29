@@ -30,10 +30,7 @@ export class JiraClient {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-      },
-      auth: {
-        username: config.email,
-        password: config.apiToken
+        'Authorization': `Bearer ${config.apiToken}`
       }
     });
 

@@ -31,8 +31,8 @@ npm install @mcp/jira-server
 ### From Source
 
 ```bash
-git clone https://github.com/yourusername/jira-mcp-server.git
-cd jira-mcp-server
+git clone https://github.com/jl-0/JIRA-API-MCP.git
+cd JIRA-API-MCP
 npm install
 npm run build
 ```
@@ -44,7 +44,6 @@ The server requires JIRA authentication credentials. You can provide these via e
 ```bash
 # Required
 JIRA_BASE_URL=https://your-domain.atlassian.net
-JIRA_EMAIL=your-email@example.com
 JIRA_API_TOKEN=your-api-token
 
 # Optional
@@ -60,6 +59,8 @@ JIRA_TIMEOUT=30000   # Request timeout in milliseconds
 4. Give it a descriptive name
 5. Copy the token and store it securely
 
+The server uses Bearer token authentication with the JIRA API.
+
 ## Usage
 
 ### With Claude Desktop
@@ -71,10 +72,9 @@ Add the server to your Claude Desktop configuration:
   "mcpServers": {
     "jira": {
       "command": "npx",
-      "args": ["@mcp/jira-server"],
+      "args": ["@jl-0/jira-server"],
       "env": {
         "JIRA_BASE_URL": "https://your-domain.atlassian.net",
-        "JIRA_EMAIL": "your-email@example.com",
         "JIRA_API_TOKEN": "your-api-token"
       }
     }
@@ -87,7 +87,6 @@ Add the server to your Claude Desktop configuration:
 ```bash
 # Using environment variables
 export JIRA_BASE_URL=https://your-domain.atlassian.net
-export JIRA_EMAIL=your-email@example.com
 export JIRA_API_TOKEN=your-api-token
 npm start
 
@@ -234,6 +233,56 @@ npm run lint
 npm run format
 ```
 
+## Publishing to npm
+
+### First-time Setup
+
+1. Ensure you have an npm account at [npmjs.com](https://www.npmjs.com/)
+2. Login to npm from your terminal:
+   ```bash
+   npm login
+   ```
+
+### Publishing Process
+
+1. Update the version in `package.json` following semantic versioning:
+   ```bash
+   npm version patch  # for bug fixes (0.1.0 -> 0.1.1)
+   npm version minor  # for new features (0.1.0 -> 0.2.0)
+   npm version major  # for breaking changes (0.1.0 -> 1.0.0)
+   ```
+
+2. Build the project:
+   ```bash
+   npm run clean
+   npm run build
+   ```
+
+3. Test locally (optional but recommended):
+   ```bash
+   npm link
+   # In another project:
+   npm link @mcp/jira-server
+   ```
+
+4. Publish to npm:
+   ```bash
+   npm publish --access public
+   ```
+
+5. Create a git tag and push:
+   ```bash
+   git push origin main
+   git push origin --tags
+   ```
+
+### Package Information
+
+- **Package Name:** @mcp/jira-server
+- **Author:** Jeff Leach
+- **Repository:** [https://github.com/jl-0/JIRA-API-MCP](https://github.com/jl-0/JIRA-API-MCP)
+- **License:** MIT
+
 ## Error Handling
 
 The server provides detailed error messages for common issues:
@@ -247,6 +296,7 @@ The server provides detailed error messages for common issues:
 
 - API tokens are never logged or exposed
 - All communication with JIRA uses HTTPS
+- Uses Bearer token authentication for secure API access
 - Credentials should be stored securely using environment variables
 - The server provides read-only access by default
 
@@ -280,4 +330,4 @@ MIT
 
 ## Support
 
-For issues and questions, please use the [GitHub Issues](https://github.com/yourusername/jira-mcp-server/issues) page.
+For issues and questions, please use the [GitHub Issues](https://github.com/jl-0/JIRA-API-MCP/issues) page.
