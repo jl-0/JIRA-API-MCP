@@ -2,8 +2,8 @@
   "mcpServers": {
     "jira": {
       "type": "stdio",
-      "command": "node",
-      "args": ["./dist/index.js"],
+      "command": "npx",
+      "args": ["-i", "@jl-0/jira-mcp-server"],
       "env": {
         "JIRA_BASE_URL": "https://your-domain.atlassian.net",
         "JIRA_API_TOKEN": "your-api-token"
