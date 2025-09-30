@@ -20,6 +20,82 @@ A Model Context Protocol (MCP) server that provides read-only access to JIRA RES
 - **Get User** - Get details about specific users
 - **Search Users** - Find users by query
 
+## Architecture
+
+This MCP server follows a modular architecture designed for maintainability and extensibility:
+
+### Project Structure
+
+```
+JIRA-API-MCP/
+├── src/
+│   ├── index.ts              # MCP server entry point
+│   ├── server.ts             # Server initialization and tool registration
+│   ├── client/
+│   │   ├── JiraClient.ts     # JIRA API client wrapper with axios
+│   │   └── types.ts          # TypeScript interfaces for JIRA data models
+│   ├── tools/
+│   │   ├── issues.ts         # Issue-related MCP tool implementations
+│   │   ├── projects.ts       # Project-related MCP tool implementations
+│   │   └── users.ts          # User-related MCP tool implementations
+│   └── __tests__/
+│       ├── tools-direct.test.ts    # Integration tests for tool handlers
+│       ├── jira.test.ts           # Direct JIRA API tests
+│       └── generate-mcp-docs.ts   # Documentation generation utility
+├── dist/                     # Compiled JavaScript output
+├── __tool_response_logs__/   # Test response captures
+└── docs/
+    ├── CLAUDE.md            # Instructions for AI assistants
+    ├── INSPECTOR_GUIDE.md   # MCP Inspector usage guide
+    ├── MCP_TOOL_DOCUMENTATION.md  # Detailed tool specifications
+    └── TEST_SUMMARY.md      # Testing documentation
+```
+
+### Key Components
+
+1. **MCP Server Layer** (`server.ts`)
+   - Implements Model Context Protocol specification
+   - Registers all available tools with the MCP SDK
+   - Handles tool dispatch and response formatting
+
+2. **JIRA Client** (`client/JiraClient.ts`)
+   - Axios-based HTTP client for JIRA REST API v2
+   - Handles authentication via Bearer tokens
+   - Implements retry logic and error handling
+   - Manages request/response transformations
+
+3. **Tool Modules** (`tools/*.ts`)
+   - Each module exports tool definitions with:
+     - Zod schemas for input validation
+     - Handler functions that call the JIRA client
+     - Consistent error handling and response formatting
+   - Tools return standardized `{success, data/error}` structure
+
+4. **Type System** (`client/types.ts`)
+   - Comprehensive TypeScript interfaces for JIRA entities
+   - Ensures type safety across the application
+   - Documents expected data structures
+
+### Data Flow
+
+1. **Request Flow:**
+   ```
+   MCP Client → MCP Server → Tool Handler → JIRA Client → JIRA API
+   ```
+
+2. **Response Flow:**
+   ```
+   JIRA API → JIRA Client → Tool Handler → MCP Server → MCP Client
+   ```
+
+### Design Principles
+
+- **Modularity**: Each tool is self-contained with its own validation and logic
+- **Type Safety**: Full TypeScript coverage with strict typing
+- **Error Resilience**: Graceful error handling at each layer
+- **Testability**: Comprehensive test suite with response capture
+- **Documentation**: Auto-generated docs from actual API responses
+
 ## Installation
 
 ### From NPM
@@ -43,23 +119,38 @@ The server requires JIRA authentication credentials. You can provide these via e
 
 ```bash
 # Required
-JIRA_BASE_URL=https://your-domain.atlassian.net
-JIRA_API_TOKEN=your-api-token
+# For Server/Data Center: https://your-server.com/jira
+# For Cloud: https://your-domain.atlassian.net (not currently supported)
+JIRA_BASE_URL=https://your-server.com/jira
+
+# For Server/Data Center: Personal Access Token (PAT)
+JIRA_API_TOKEN=your-personal-access-token
 
 # Optional
 JIRA_MAX_RESULTS=50  # Default max results per request
 JIRA_TIMEOUT=30000   # Request timeout in milliseconds
 ```
 
-### Getting a JIRA API Token
+### JIRA Server/Data Center Support
 
-1. Log in to your JIRA account
-2. Go to [Atlassian Account Settings](https://id.atlassian.com/manage-profile/security/api-tokens)
-3. Click "Create API token"
-4. Give it a descriptive name
-5. Copy the token and store it securely
+This MCP server is designed for **JIRA Server and Data Center** installations using:
+- **REST API v2** endpoints
+- **Personal Access Token (PAT)** authentication with Bearer tokens
+- Compatible with JIRA Server 8.14+ and JIRA Service Management 4.15+
 
-The server uses Bearer token authentication with the JIRA API.
+### Getting a Personal Access Token (PAT)
+
+#### For JIRA Server/Data Center:
+1. Log in to your JIRA instance
+2. Navigate to your Profile → Personal Access Tokens
+3. Click "Create token"
+4. Give it a descriptive name and set expiration
+5. Copy the token immediately (it won't be shown again)
+6. Use this token as `JIRA_API_TOKEN` in your configuration
+
+The server uses Bearer token authentication: `Authorization: Bearer <token>`
+
+**Note:** JIRA Cloud uses a different authentication mechanism (API tokens with Basic auth) which is not currently supported by this server.
 
 ## Usage
 
@@ -93,6 +184,47 @@ npm start
 # Or using a .env file
 npm start
 ```
+
+## Testing & Development
+
+### Interactive Testing with MCP Inspector
+
+The MCP Inspector provides an interactive web interface for testing all server capabilities:
+
+```bash
+# Launch inspector with TypeScript source (development)
+npm run inspect
+
+# Build and inspect with compiled JavaScript
+npm run inspect:built
+```
+
+The inspector will open at `http://localhost:6274` and allow you to:
+- Test all available tools with custom parameters
+- View real-time server responses
+- Debug authentication and connectivity issues
+- Monitor server logs and notifications
+
+See [INSPECTOR_GUIDE.md](./INSPECTOR_GUIDE.md) for detailed usage instructions.
+
+### Automated Testing
+
+Run the comprehensive test suite:
+
+```bash
+# Run all tests
+npm test
+
+# Run direct tool integration tests
+npm run test:direct
+
+# Generate documentation from test responses
+npm run test:generate-docs
+```
+
+Test outputs are saved to `__tool_response_logs__/` for analysis.
+
+See [TEST_SUMMARY.md](./TEST_SUMMARY.md) for test documentation.
 
 ## Available Tools
 
@@ -320,9 +452,36 @@ Planned features for future releases:
 - Sprint and board operations (JIRA Software)
 - Service desk operations (JIRA Service Management)
 
+## Documentation
+
+This project maintains comprehensive documentation:
+
+- **[CLAUDE.md](./CLAUDE.md)** - Instructions for AI assistants working with this codebase
+- **[INSPECTOR_GUIDE.md](./INSPECTOR_GUIDE.md)** - Detailed guide for using MCP Inspector
+- **[MCP_TOOL_DOCUMENTATION.md](./MCP_TOOL_DOCUMENTATION.md)** - Complete tool specifications and examples
+- **[TEST_SUMMARY.md](./TEST_SUMMARY.md)** - Testing approach and coverage
+- **[SCRIPTS_REFERENCE.md](./SCRIPTS_REFERENCE.md)** - NPM scripts quick reference
+
+### Documentation Maintenance
+
+When making changes to the codebase:
+
+1. **Update README.md** when adding features or changing configuration
+2. **Run tests** to capture new response formats: `npm run test:direct`
+3. **Generate documentation** from test outputs: `npm run test:generate-docs`
+4. **Update tool documentation** if parameters or responses change
+5. **Follow guidelines** in CLAUDE.md for consistent documentation
+
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please:
+
+1. Read [CLAUDE.md](./CLAUDE.md) for development guidelines
+2. Update documentation when making changes
+3. Add tests for new functionality
+4. Ensure all tests pass: `npm test`
+5. Run linting: `npm run lint`
+6. Submit a Pull Request with clear description
 
 ## License
 

@@ -2,48 +2,55 @@ import { z } from 'zod';
 import { JiraClient } from '../client/JiraClient.js';
 
 const SearchIssuesSchema = z.object({
-  jql: z.string().describe('JQL query to search for issues'),
-  maxResults: z.number().optional().default(50).describe('Maximum number of results to return'),
-  fields: z.array(z.string()).optional().describe('Fields to include in the response'),
-  expand: z.array(z.string()).optional().describe('Additional data to expand'),
-  startAt: z.number().optional().default(0).describe('Starting index for pagination')
+  jql: z.string().describe('JQL query string to search for issues. Examples: "project = IDS", "assignee = currentUser() AND status = Open", "text ~ VICAR"'),
+  maxResults: z.number().optional().default(50).describe('Maximum number of results to return as a number (default: 50, max: 100). Must be a number, not a string.'),
+  fields: z.array(z.string()).optional().describe('Optional array of field names to include. Example: ["summary", "status", "assignee"]. If omitted, returns common fields: summary, status, priority, assignee, reporter, created, updated, issuetype, project, labels, components'),
+  expand: z.array(z.string()).optional().describe('Optional array of entities to expand. Example: ["changelog", "transitions"]. Common values: changelog, renderedFields, transitions'),
+  properties: z.array(z.string()).optional().describe('Optional array of issue properties to include. Example: ["prop1", "prop2"]. Use "*all" to include all properties'),
+  startAt: z.number().optional().default(0).describe('Starting index for pagination as a number (default: 0). Use for fetching additional pages of results. Must be a number, not a string.')
 });
 
 const GetIssueSchema = z.object({
-  issueIdOrKey: z.string().describe('Issue ID or key (e.g., PROJ-123)'),
-  fields: z.array(z.string()).optional().describe('Fields to include in the response'),
-  expand: z.array(z.string()).optional().describe('Additional data to expand')
+  issueIdOrKey: z.string().describe('The JIRA issue ID or key to retrieve. Example: "IDS-10194" or "PROJ-123"'),
+  fields: z.array(z.string()).optional().describe('Optional array of specific fields to return. Example: ["summary", "status", "description", "assignee", "reporter", "priority"]. If omitted, returns common fields: summary, status, priority, assignee, reporter, created, updated, description, issuetype, project, resolution, resolutiondate, duedate, labels, components, fixVersions, versions'),
+  expand: z.array(z.string()).optional().describe('Optional array of additional data to expand. Example: ["changelog", "transitions", "renderedFields"]. Warning: Some expand options may significantly increase response size'),
+  properties: z.array(z.string()).optional().describe('Optional array of issue properties to include. Example: ["prop1", "prop2"]. Use "*all" to include all properties'),
+  updateHistory: z.boolean().optional().describe('Whether to update the issue\'s history of views')
 });
 
 const GetIssueCommentsSchema = z.object({
-  issueIdOrKey: z.string().describe('Issue ID or key (e.g., PROJ-123)'),
-  maxResults: z.number().optional().default(50).describe('Maximum number of results'),
-  startAt: z.number().optional().default(0).describe('Starting index for pagination')
+  issueIdOrKey: z.string().describe('The JIRA issue ID or key to get comments for. Example: "IDS-10194"'),
+  maxResults: z.number().optional().default(50).describe('Maximum number of comments to return as a number (default: 50). Must be a number, not a string.'),
+  startAt: z.number().optional().default(0).describe('Starting index for pagination as a number (default: 0). Must be a number, not a string.')
 });
 
 const GetIssueTransitionsSchema = z.object({
-  issueIdOrKey: z.string().describe('Issue ID or key (e.g., PROJ-123)'),
-  includeUnavailable: z.boolean().optional().default(false).describe('Include unavailable transitions')
+  issueIdOrKey: z.string().describe('The JIRA issue ID or key to get transitions for. Example: "IDS-10194"'),
+  includeUnavailable: z.boolean().optional().default(false).describe('Whether to include transitions that are not available to the current user (default: false)')
 });
 
 export const issueTools = {
   jira_search_issues: {
-    description: 'Search for JIRA issues using JQL (JIRA Query Language)',
+    description: 'Search for JIRA issues using JQL (JIRA Query Language). Use this to find issues based on various criteria like project, status, assignee, text content, etc. Returns a summary of matching issues.',
     inputSchema: SearchIssuesSchema,
     handler: async (client: JiraClient, input: z.infer<typeof SearchIssuesSchema>) => {
       try {
-        const result = await client.searchIssuesJQL(input.jql, {
+        // Use the standard search endpoint for Server/Data Center
+        const result = await client.searchIssues(input.jql, {
+          startAt: input.startAt,
           maxResults: input.maxResults,
           fields: input.fields,
-          expand: input.expand
+          expand: input.expand,
+          properties: input.properties
         });
 
         return {
           success: true,
           data: {
-            total: result.issues.length,
-            isLast: result.isLast,
-            nextPageToken: result.nextPageToken,
+            total: result.total,
+            startAt: result.startAt,
+            maxResults: result.maxResults,
+            isLast: result.startAt + result.issues.length >= result.total,
             issues: result.issues.map(issue => ({
               key: issue.key,
               id: issue.id,
@@ -71,13 +78,15 @@ export const issueTools = {
   },
 
   jira_get_issue: {
-    description: 'Get detailed information about a specific JIRA issue',
+    description: 'Get detailed information about a specific JIRA issue by its key (e.g., "IDS-10194"). Returns comprehensive issue details including summary, description, status, assignee, and custom fields. Use the fields parameter to limit response size if needed.',
     inputSchema: GetIssueSchema,
     handler: async (client: JiraClient, input: z.infer<typeof GetIssueSchema>) => {
       try {
         const issue = await client.getIssue(input.issueIdOrKey, {
           fields: input.fields,
-          expand: input.expand
+          expand: input.expand,
+          properties: input.properties,
+          updateHistory: input.updateHistory
         });
 
         return {
@@ -141,7 +150,7 @@ export const issueTools = {
   },
 
   jira_get_issue_comments: {
-    description: 'Get comments for a specific JIRA issue',
+    description: 'Get all comments for a specific JIRA issue by its key (e.g., "IDS-10194"). Returns a paginated list of comments with author and timestamp information.',
     inputSchema: GetIssueCommentsSchema,
     handler: async (client: JiraClient, input: z.infer<typeof GetIssueCommentsSchema>) => {
       try {
@@ -176,7 +185,7 @@ export const issueTools = {
   },
 
   jira_get_issue_transitions: {
-    description: 'Get available transitions for a JIRA issue',
+    description: 'Get available workflow transitions for a JIRA issue by its key (e.g., "IDS-10194"). Shows what status changes are possible for the issue (e.g., Open -> In Progress, In Progress -> Resolved).',
     inputSchema: GetIssueTransitionsSchema,
     handler: async (client: JiraClient, input: z.infer<typeof GetIssueTransitionsSchema>) => {
       try {

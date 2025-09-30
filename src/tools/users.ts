@@ -13,8 +13,8 @@ const GetUserSchema = z.object({
 const SearchUsersSchema = z.object({
   query: z.string().optional().describe('Search query matching display name and email'),
   accountId: z.string().optional().describe('Find user by account ID'),
-  maxResults: z.number().optional().default(50).describe('Maximum number of results'),
-  startAt: z.number().optional().default(0).describe('Starting index for pagination')
+  maxResults: z.number().optional().default(50).describe('Maximum number of results as a number (default: 50). Must be a number, not a string.'),
+  startAt: z.number().optional().default(0).describe('Starting index for pagination as a number (default: 0). Must be a number, not a string.')
 });
 
 export const userTools = {

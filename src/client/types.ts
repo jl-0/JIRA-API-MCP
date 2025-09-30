@@ -192,13 +192,6 @@ export interface JiraSearchResults {
   schema?: Record<string, any>;
 }
 
-export interface JiraSearchAndReconcileResults {
-  isLast: boolean;
-  nextPageToken?: string;
-  issues: JiraIssue[];
-  names?: Record<string, string>;
-  schema?: Record<string, any>;
-}
 
 export interface JiraProjectPage {
   self?: string;

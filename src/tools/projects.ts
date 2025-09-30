@@ -2,22 +2,22 @@ import { z } from 'zod';
 import { JiraClient } from '../client/JiraClient.js';
 
 const ListProjectsSchema = z.object({
-  expand: z.array(z.string()).optional().describe('Additional data to expand (e.g., description, lead, url, projectKeys)'),
-  recent: z.number().optional().describe('Return only the most recent projects')
+  expand: z.array(z.string()).optional().describe('Optional array of additional data to expand. Example: ["description", "lead", "url", "projectKeys"]. Commonly used values: description, lead, url, projectKeys'),
+  recent: z.number().optional().describe('Optional number to return only the N most recent projects. Must be a number, not a string. Example: 10 to get the 10 most recent projects')
 });
 
 const GetProjectSchema = z.object({
-  projectIdOrKey: z.string().describe('Project ID or key'),
-  expand: z.array(z.string()).optional().describe('Additional data to expand')
+  projectIdOrKey: z.string().describe('The JIRA project ID or key to retrieve. Example: "IDS" or "10000"'),
+  expand: z.array(z.string()).optional().describe('Optional array of additional data to expand. Example: ["description", "lead", "issueTypes", "components", "versions"]')
 });
 
 const SearchProjectsSchema = z.object({
   query: z.string().optional().describe('Search query string'),
-  maxResults: z.number().optional().default(50).describe('Maximum number of results'),
-  startAt: z.number().optional().default(0).describe('Starting index for pagination'),
+  maxResults: z.number().optional().default(50).describe('Maximum number of results as a number (default: 50). Must be a number, not a string.'),
+  startAt: z.number().optional().default(0).describe('Starting index for pagination as a number (default: 0). Must be a number, not a string.'),
   orderBy: z.enum(['category', '-category', '+category', 'key', '-key', '+key', 'name', '-name', '+name', 'owner', '-owner', '+owner']).optional().default('key').describe('Order results by field'),
   typeKey: z.string().optional().describe('Project type key'),
-  categoryId: z.number().optional().describe('Project category ID'),
+  categoryId: z.number().optional().describe('Project category ID as a number. Must be a number, not a string.'),
   action: z.enum(['view', 'browse', 'edit']).optional().default('browse').describe('Filter by permission')
 });
 

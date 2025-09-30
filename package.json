@@ -1,6 +1,6 @@
 {
   "name": "@jl-0/jira-mcp-server",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "MCP server for JIRA REST API integration",
   "type": "module",
   "main": "dist/index.js",
@@ -15,8 +15,12 @@
     "clean": "rm -rf dist",
     "prepare": "npm run build",
     "test": "jest",
+    "test:direct": "jest src/__tests__/tools-direct.test.ts",
+    "test:generate-docs": "tsx src/__tests__/generate-mcp-docs.ts",
     "lint": "eslint src/**/*.ts",
-    "format": "prettier --write src/**/*.ts"
+    "format": "prettier --write src/**/*.ts",
+    "inspect": "npx -y @modelcontextprotocol/inspector tsx src/index.ts",
+    "inspect:built": "npm run build && npx -y @modelcontextprotocol/inspector node dist/index.js"
   },
   "keywords": [
     "mcp",
@@ -31,20 +35,21 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.6.0",
     "axios": "^1.7.7",
+    "dotenv": "^16.4.5",
     "zod": "^3.23.8",
-    "dotenv": "^16.4.5"
+    "zod-to-json-schema": "^3.24.6"
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
-    "typescript": "^5.6.3",
-    "tsx": "^4.19.2",
     "@types/jest": "^29.5.14",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.2.5",
+    "@types/node": "^22.10.0",
     "@typescript-eslint/eslint-plugin": "^8.14.0",
     "@typescript-eslint/parser": "^8.14.0",
     "eslint": "^9.15.0",
-    "prettier": "^3.3.3"
+    "jest": "^29.7.0",
+    "prettier": "^3.3.3",
+    "ts-jest": "^29.2.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
   },
   "engines": {
     "node": ">=18.0.0"

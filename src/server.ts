@@ -5,6 +5,7 @@ import {
   Tool
 } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 import { JiraClient } from './client/JiraClient.js';
 import { JiraConfig } from './client/types.js';
 import { issueTools } from './tools/issues.js';
@@ -13,7 +14,7 @@ import { userTools } from './tools/users.js';
 
 const ConfigSchema = z.object({
   baseUrl: z.string().url().describe('JIRA instance base URL'),
-  apiToken: z.string().describe('JIRA API token'),
+  apiToken: z.string().describe('JIRA API token (Personal Access Token)'),
   maxResults: z.number().optional().default(50).describe('Default max results per request'),
   timeout: z.number().optional().default(30000).describe('Request timeout in milliseconds')
 });
@@ -50,17 +51,24 @@ export class JiraMCPServer {
 
   private setupHandlers() {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
-      const toolList: Tool[] = Object.entries(this.tools).map(([name, tool]) => ({
-        name,
-        description: tool.description,
-        inputSchema: {
-          type: 'object',
-          properties: tool.inputSchema.shape,
-          required: Object.keys(tool.inputSchema.shape).filter(
-            key => !tool.inputSchema.shape[key].isOptional()
-          )
-        }
-      }));
+      const toolList: Tool[] = Object.entries(this.tools).map(([name, tool]) => {
+        // Convert Zod schema to JSON Schema format with proper type information
+        const jsonSchema = zodToJsonSchema(tool.inputSchema, {
+          target: 'openApi3',
+          $refStrategy: 'none'
+        }) as any;
+
+        // Ensure the schema has the correct structure for MCP
+        return {
+          name,
+          description: tool.description,
+          inputSchema: {
+            type: 'object' as const,
+            properties: jsonSchema.properties || {},
+            required: jsonSchema.required || []
+          }
+        };
+      });
 
       return {
         tools: toolList

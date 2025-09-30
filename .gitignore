@@ -11,6 +11,8 @@ dist/
 
 # Claude configuration
 .claude/mcp.json
+# Don't include due to secret strings
+.mcp.json 
 
 # IDE
 .vscode/

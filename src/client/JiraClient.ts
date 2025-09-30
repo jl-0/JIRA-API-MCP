@@ -3,7 +3,6 @@ import {
   JiraConfig,
   JiraIssue,
   JiraSearchResults,
-  JiraSearchAndReconcileResults,
   JiraCommentPage,
   JiraTransition,
   JiraProject,
@@ -30,7 +29,8 @@ export class JiraClient {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${config.apiToken}`
+        'Authorization': `Bearer ${config.apiToken}`,
+        'X-Atlassian-Token': 'no-check'
       }
     });
 
@@ -65,41 +65,28 @@ export class JiraClient {
     fields?: string[];
     expand?: string[];
     properties?: string[];
+    validateQuery?: boolean;
   }): Promise<JiraSearchResults> {
+    // Default to common fields if none specified to reduce response size
+    const defaultFields = [
+      'summary', 'status', 'priority', 'assignee', 'reporter',
+      'created', 'updated', 'issuetype', 'project', 'labels', 'components'
+    ];
+
     const response = await this.client.get<JiraSearchResults>('/rest/api/2/search', {
       params: {
         jql,
         startAt: options?.startAt || 0,
         maxResults: options?.maxResults || this.config.maxResults || 50,
-        fields: options?.fields?.join(','),
+        fields: options?.fields?.join(',') || defaultFields.join(','),
         expand: options?.expand?.join(','),
-        properties: options?.properties?.join(',')
+        properties: options?.properties?.join(','),
+        validateQuery: options?.validateQuery
       }
     });
     return response.data;
   }
 
-  async searchIssuesJQL(jql: string, options?: {
-    nextPageToken?: string;
-    maxResults?: number;
-    fields?: string[];
-    expand?: string[];
-    properties?: string[];
-    fieldsByKeys?: boolean;
-    reconcileIssues?: string[];
-  }): Promise<JiraSearchAndReconcileResults> {
-    const response = await this.client.post<JiraSearchAndReconcileResults>('/rest/api/2/search/jql', {
-      jql,
-      nextPageToken: options?.nextPageToken,
-      maxResults: options?.maxResults || this.config.maxResults || 50,
-      fields: options?.fields || ['id', 'key', 'summary', 'status', 'assignee', 'reporter', 'created', 'updated', 'priority', 'issuetype', 'project'],
-      expand: options?.expand,
-      properties: options?.properties,
-      fieldsByKeys: options?.fieldsByKeys,
-      reconcileIssues: options?.reconcileIssues
-    });
-    return response.data;
-  }
 
   async getIssue(issueIdOrKey: string, options?: {
     fields?: string[];
@@ -107,9 +94,17 @@ export class JiraClient {
     properties?: string[];
     updateHistory?: boolean;
   }): Promise<JiraIssue> {
+    // Default to common fields if none specified to reduce response size
+    const defaultFields = [
+      'summary', 'status', 'priority', 'assignee', 'reporter',
+      'created', 'updated', 'description', 'issuetype', 'project',
+      'resolution', 'resolutiondate', 'duedate', 'labels',
+      'components', 'fixVersions', 'versions'
+    ];
+
     const response = await this.client.get<JiraIssue>(`/rest/api/2/issue/${issueIdOrKey}`, {
       params: {
-        fields: options?.fields?.join(','),
+        fields: options?.fields?.join(',') || defaultFields.join(','),
         expand: options?.expand?.join(','),
         properties: options?.properties?.join(','),
         updateHistory: options?.updateHistory
@@ -142,7 +137,6 @@ export class JiraClient {
     transitionId?: string;
     skipRemoteOnlyCondition?: boolean;
     includeUnavailableTransitions?: boolean;
-    sortByOpsBarAndStatus?: boolean;
     expand?: string;
   }): Promise<{ transitions: JiraTransition[] }> {
     const response = await this.client.get<{ transitions: JiraTransition[] }>(
@@ -152,7 +146,6 @@ export class JiraClient {
           transitionId: options?.transitionId,
           skipRemoteOnlyCondition: options?.skipRemoteOnlyCondition,
           includeUnavailableTransitions: options?.includeUnavailableTransitions,
-          sortByOpsBarAndStatus: options?.sortByOpsBarAndStatus,
           expand: options?.expand
         }
       }
@@ -165,13 +158,11 @@ export class JiraClient {
   async getAllProjects(options?: {
     expand?: string[];
     recent?: number;
-    properties?: string[];
   }): Promise<JiraProject[]> {
     const response = await this.client.get<JiraProject[]>('/rest/api/2/project', {
       params: {
         expand: options?.expand?.join(','),
-        recent: options?.recent,
-        properties: options?.properties?.join(',')
+        recent: options?.recent
       }
     });
     return response.data;
@@ -179,14 +170,12 @@ export class JiraClient {
 
   async getProject(projectIdOrKey: string, options?: {
     expand?: string[];
-    properties?: string[];
   }): Promise<JiraProjectDetails> {
     const response = await this.client.get<JiraProjectDetails>(
       `/rest/api/2/project/${projectIdOrKey}`,
       {
         params: {
-          expand: options?.expand?.join(','),
-          properties: options?.properties?.join(',')
+          expand: options?.expand?.join(',')
         }
       }
     );
@@ -203,8 +192,6 @@ export class JiraClient {
     action?: 'view' | 'browse' | 'edit';
     expand?: string;
     status?: string[];
-    properties?: string[];
-    propertyQuery?: string;
   }): Promise<JiraProjectPage> {
     const response = await this.client.get<JiraProjectPage>('/rest/api/2/project/search', {
       params: {
@@ -216,9 +203,7 @@ export class JiraClient {
         categoryId: options?.categoryId,
         action: options?.action || 'browse',
         expand: options?.expand,
-        status: options?.status?.join(','),
-        properties: options?.properties?.join(','),
-        propertyQuery: options?.propertyQuery
+        status: options?.status?.join(',')
       }
     });
     return response.data;
