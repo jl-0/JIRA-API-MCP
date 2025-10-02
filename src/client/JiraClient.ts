@@ -9,7 +9,11 @@ import {
   JiraProjectDetails,
   JiraProjectPage,
   JiraUser,
-  JiraErrorResponse
+  JiraErrorResponse,
+  JiraField,
+  CreateMetaIssueTypeBean,
+  CreateMetaIssueTypesResponse,
+  JiraIssueEditMeta
 } from './types.js';
 
 export class JiraClient {
@@ -252,6 +256,56 @@ export class JiraClient {
         expand: options?.expand
       }
     });
+    return response.data;
+  }
+
+  // Field Methods
+
+  async getAllFields(): Promise<JiraField[]> {
+    const response = await this.client.get<JiraField[]>('/rest/api/2/field');
+    return response.data;
+  }
+
+  async getIssueTypesForProject(projectIdOrKey: string, options?: {
+    startAt?: number;
+    maxResults?: number;
+  }): Promise<CreateMetaIssueTypesResponse> {
+    const response = await this.client.get<CreateMetaIssueTypesResponse>(
+      `/rest/api/2/issue/createmeta/${projectIdOrKey}/issuetypes`,
+      {
+        params: {
+          startAt: options?.startAt || 0,
+          maxResults: options?.maxResults || this.config.maxResults || 50
+        }
+      }
+    );
+    return response.data;
+  }
+
+  async getIssueTypeFields(
+    projectIdOrKey: string,
+    issueTypeId: string,
+    options?: {
+      startAt?: number;
+      maxResults?: number;
+    }
+  ): Promise<CreateMetaIssueTypeBean> {
+    const response = await this.client.get<CreateMetaIssueTypeBean>(
+      `/rest/api/2/issue/createmeta/${projectIdOrKey}/issuetypes/${issueTypeId}`,
+      {
+        params: {
+          startAt: options?.startAt || 0,
+          maxResults: options?.maxResults || this.config.maxResults || 50
+        }
+      }
+    );
+    return response.data;
+  }
+
+  async getIssueEditMeta(issueIdOrKey: string): Promise<JiraIssueEditMeta> {
+    const response = await this.client.get<JiraIssueEditMeta>(
+      `/rest/api/2/issue/${issueIdOrKey}/editmeta`
+    );
     return response.data;
   }
 }

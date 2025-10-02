@@ -11,6 +11,7 @@ import { JiraConfig } from './client/types.js';
 import { issueTools } from './tools/issues.js';
 import { projectTools } from './tools/projects.js';
 import { userTools } from './tools/users.js';
+import { fieldTools } from './tools/fields.js';
 
 const ConfigSchema = z.object({
   baseUrl: z.string().url().describe('JIRA instance base URL'),
@@ -45,7 +46,8 @@ export class JiraMCPServer {
     this.tools = {
       ...issueTools,
       ...projectTools,
-      ...userTools
+      ...userTools,
+      ...fieldTools
     };
   }
 

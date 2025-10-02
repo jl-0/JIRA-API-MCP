@@ -231,3 +231,103 @@ export interface JiraErrorResponse {
   errors?: Record<string, string>;
   statusCode?: number;
 }
+
+// Field metadata types
+export interface JiraField {
+  id: string;
+  key?: string;
+  name: string;
+  custom: boolean;
+  orderable: boolean;
+  navigable: boolean;
+  searchable: boolean;
+  clauseNames?: string[];
+  schema?: JiraFieldSchema;
+  untranslatedName?: string;
+  scope?: {
+    type: 'PROJECT' | 'TEMPLATE';
+    project?: JiraProject;
+  };
+}
+
+export interface JiraFieldSchema {
+  type: string;
+  items?: string;
+  system?: string;
+  custom?: string;
+  customId?: number;
+}
+
+// Create metadata types
+export interface CreateMetaIssueTypeBean {
+  self: string;
+  id: string;
+  name: string;
+  description?: string;
+  iconUrl?: string;
+  avatarId?: number;
+  subtask: boolean;
+  expand?: string;
+  fields?: Record<string, FieldMetaBean>;
+}
+
+export interface FieldMetaBean {
+  required: boolean;
+  schema: JiraFieldSchema;
+  name: string;
+  key: string;
+  autoCompleteUrl?: string;
+  hasDefaultValue?: boolean;
+  operations?: string[];
+  allowedValues?: any[];
+  defaultValue?: any;
+}
+
+export interface CreateMetaIssueTypesResponse {
+  maxResults: number;
+  startAt: number;
+  total: number;
+  isLast: boolean;
+  values: CreateMetaIssueTypeBean[];
+}
+
+// Custom Fields Search types
+export interface JiraCustomField {
+  id: string;
+  name: string;
+  description?: string;
+  type: string;
+  searcherKey?: string;
+}
+
+export interface JiraCustomFieldsPage {
+  maxResults: number;
+  startAt: number;
+  total: number;
+  isLast: boolean;
+  values: JiraCustomField[];
+}
+
+export interface JiraEditMetaFieldSchema {
+  type: string;
+  items?: string;
+  system?: string;
+  custom?: string;
+  customId?: number;
+}
+
+export interface JiraEditMetaField {
+  required: boolean;
+  schema: JiraEditMetaFieldSchema;
+  name: string;
+  fieldId: string;
+  operations: string[];
+  allowedValues?: any[];
+  hasDefaultValue?: boolean;
+  defaultValue?: any;
+  autoCompleteUrl?: string;
+}
+
+export interface JiraIssueEditMeta {
+  fields: Record<string, JiraEditMetaField>;
+}

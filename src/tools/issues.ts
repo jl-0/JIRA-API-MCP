@@ -2,9 +2,9 @@ import { z } from 'zod';
 import { JiraClient } from '../client/JiraClient.js';
 
 const SearchIssuesSchema = z.object({
-  jql: z.string().describe('JQL query string to search for issues. Examples: "project = IDS", "assignee = currentUser() AND status = Open", "text ~ VICAR"'),
+  jql: z.string().describe('JQL query string to search for issues. Examples: "project = IDS", "assignee = currentUser() AND status = Open", "key = IDS-10314". IMPORTANT: Use "key = ISSUE-123" to query a specific issue, NOT "text ~ ISSUE-123" which performs unnecessary full-text search.'),
   maxResults: z.number().optional().default(50).describe('Maximum number of results to return as a number (default: 50, max: 100). Must be a number, not a string.'),
-  fields: z.array(z.string()).optional().describe('Optional array of field names to include. Example: ["summary", "status", "assignee"]. If omitted, returns common fields: summary, status, priority, assignee, reporter, created, updated, issuetype, project, labels, components'),
+  fields: z.array(z.string()).optional().describe('Optional array of field names to include. Example: ["summary", "status", "assignee"]. Strongly recommended to specify only needed fields to reduce data transfer. If omitted, returns common fields: summary, status, priority, assignee, reporter, created, updated, issuetype, project, labels, components'),
   expand: z.array(z.string()).optional().describe('Optional array of entities to expand. Example: ["changelog", "transitions"]. Common values: changelog, renderedFields, transitions'),
   properties: z.array(z.string()).optional().describe('Optional array of issue properties to include. Example: ["prop1", "prop2"]. Use "*all" to include all properties'),
   startAt: z.number().optional().default(0).describe('Starting index for pagination as a number (default: 0). Use for fetching additional pages of results. Must be a number, not a string.')
@@ -62,7 +62,11 @@ export const issueTools = {
               created: issue.fields.created,
               updated: issue.fields.updated,
               project: issue.fields.project?.name,
-              issueType: issue.fields.issuetype?.name,
+              issueType: {
+                id: issue.fields.issuetype?.id,
+                name: issue.fields.issuetype?.name,
+                subtask: issue.fields.issuetype?.subtask
+              },
               labels: issue.fields.labels,
               components: issue.fields.components?.map(c => c.name)
             }))
@@ -78,7 +82,7 @@ export const issueTools = {
   },
 
   jira_get_issue: {
-    description: 'Get detailed information about a specific JIRA issue by its key (e.g., "IDS-10194"). Returns comprehensive issue details including summary, description, status, assignee, and custom fields. Use the fields parameter to limit response size if needed.',
+    description: 'Get detailed information about a specific JIRA issue by its key (e.g., "IDS-10194"). Returns comprehensive issue details including summary, description, status, assignee, and custom fields. CRITICAL: Always use the fields parameter to request only specific fields needed - requesting all fields or omitting this parameter returns excessive data and may fail. For custom fields, use field discovery workflow first: (1) Get issue type with fields: ["issuetype", "project"], (2) Use jira_get_issue_type_fields to find field names/IDs, (3) Request only needed fields by name or customfield_XXXX ID. Example: fields: ["summary", "customfield_10001", "status"].',
     inputSchema: GetIssueSchema,
     handler: async (client: JiraClient, input: z.infer<typeof GetIssueSchema>) => {
       try {

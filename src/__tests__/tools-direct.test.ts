@@ -7,6 +7,7 @@ import dotenv from 'dotenv';
 import { issueTools } from '../tools/issues.js';
 import { projectTools } from '../tools/projects.js';
 import { userTools } from '../tools/users.js';
+import { fieldTools } from '../tools/fields.js';
 import { JiraClient } from '../client/JiraClient.js';
 import type { JiraConfig } from '../client/types.js';
 
@@ -242,6 +243,98 @@ describe('JIRA MCP Tools Direct Tests', () => {
       saveToolResponse('jira_search_users', 'basic', response);
 
       expect(response).toBeDefined();
+    }, 30000);
+  });
+
+  describe('Field Tools', () => {
+    test('jira_get_issue_types', async () => {
+      console.log('\n🔍 Testing: jira_get_issue_types');
+
+      const args = {
+        projectIdOrKey: 'IDS',
+        maxResults: 10,
+        startAt: 0
+      };
+
+      const response = await fieldTools.jira_get_issue_types.handler(client, args);
+      saveToolResponse('jira_get_issue_types', 'basic', response);
+
+      expect(response).toBeDefined();
+      expect(response.success).toBeDefined();
+    }, 30000);
+
+    test('jira_get_issue_type_fields', async () => {
+      console.log('\n🔍 Testing: jira_get_issue_type_fields');
+
+      // First get issue types to get a valid issue type ID
+      const issueTypesResponse = await fieldTools.jira_get_issue_types.handler(client, {
+        projectIdOrKey: 'IDS',
+        maxResults: 1,
+        startAt: 0
+      });
+
+      if (issueTypesResponse.success && issueTypesResponse.data.issueTypes.length > 0) {
+        const issueTypeId = issueTypesResponse.data.issueTypes[0].id;
+
+        const args = {
+          projectIdOrKey: 'IDS',
+          issueTypeId: issueTypeId,
+          maxResults: 50,
+          startAt: 0
+        };
+
+        const response = await fieldTools.jira_get_issue_type_fields.handler(client, args);
+        saveToolResponse('jira_get_issue_type_fields', 'basic', response);
+
+        expect(response).toBeDefined();
+        expect(response.success).toBeDefined();
+      } else {
+        console.log('⚠️  Skipping jira_get_issue_type_fields test - no issue types found');
+      }
+    }, 30000);
+
+    test('jira_get_issue_field_names - basic', async () => {
+      console.log('\n🔍 Testing: jira_get_issue_field_names - basic');
+
+      const args = {
+        issueIdOrKey: testIssueKey
+      };
+
+      const response = await fieldTools.jira_get_issue_field_names.handler(client, args);
+      saveToolResponse('jira_get_issue_field_names', 'basic', response);
+
+      expect(response).toBeDefined();
+      expect(response.success).toBeDefined();
+    }, 30000);
+
+    test('jira_search_issue_fields - single term', async () => {
+      console.log('\n🔍 Testing: jira_search_issue_fields - single search term');
+
+      const args = {
+        issueIdOrKey: testIssueKey,
+        searchTerms: ['test']
+      };
+
+      const response = await fieldTools.jira_search_issue_fields.handler(client, args);
+      saveToolResponse('jira_search_issue_fields', 'single_term', response);
+
+      expect(response).toBeDefined();
+      expect(response.success).toBeDefined();
+    }, 30000);
+
+    test('jira_search_issue_fields - multiple terms', async () => {
+      console.log('\n🔍 Testing: jira_search_issue_fields - multiple search terms');
+
+      const args = {
+        issueIdOrKey: testIssueKey,
+        searchTerms: ['target', 'date', 'summary']
+      };
+
+      const response = await fieldTools.jira_search_issue_fields.handler(client, args);
+      saveToolResponse('jira_search_issue_fields', 'multiple_terms', response);
+
+      expect(response).toBeDefined();
+      expect(response.success).toBeDefined();
     }, 30000);
   });
 

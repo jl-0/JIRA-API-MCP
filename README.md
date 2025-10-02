@@ -20,6 +20,12 @@ A Model Context Protocol (MCP) server that provides read-only access to JIRA RES
 - **Get User** - Get details about specific users
 - **Search Users** - Find users by query
 
+### Field Discovery Operations
+- **Get Issue Types** - Get all issue types for a project
+- **Get Issue Type Fields** - Get all fields available for a specific issue type
+- **Get Issue Field Names** - Get all field IDs and names for a specific issue
+- **Search Issue Fields** - Search for fields by name in a specific issue with partial matching
+
 ## Architecture
 
 This MCP server follows a modular architecture designed for maintainability and extensibility:
@@ -37,7 +43,8 @@ JIRA-API-MCP/
 │   ├── tools/
 │   │   ├── issues.ts         # Issue-related MCP tool implementations
 │   │   ├── projects.ts       # Project-related MCP tool implementations
-│   │   └── users.ts          # User-related MCP tool implementations
+│   │   ├── users.ts          # User-related MCP tool implementations
+│   │   └── fields.ts         # Field discovery MCP tool implementations
 │   └── __tests__/
 │       ├── tools-direct.test.ts    # Integration tests for tool handlers
 │       ├── jira.test.ts           # Direct JIRA API tests
@@ -310,6 +317,51 @@ Search for users.
 - `maxResults`: Maximum results (default: 50)
 - `startAt`: Starting index
 
+### jira_get_issue_types
+Get all issue types available for a specific project.
+
+**Parameters:**
+- `projectIdOrKey` (required): Project ID or key
+- `maxResults`: Maximum results (default: 50)
+- `startAt`: Starting index
+
+### jira_get_issue_type_fields
+Get all fields available for a specific issue type in a project.
+
+**Parameters:**
+- `projectIdOrKey` (required): Project ID or key
+- `issueTypeId` (required): Issue type ID
+- `maxResults`: Maximum results (default: 50)
+- `startAt`: Starting index
+
+### jira_get_issue_field_names
+Get all field IDs and names for a specific JIRA issue.
+
+**Parameters:**
+- `issueIdOrKey` (required): Issue ID or key
+
+**Example:**
+```json
+{
+  "issueIdOrKey": "IDS-10314"
+}
+```
+
+### jira_search_issue_fields
+Search for specific fields by name in a JIRA issue.
+
+**Parameters:**
+- `issueIdOrKey` (required): Issue ID or key
+- `searchTerms` (required): Array of search terms to match against field names
+
+**Example:**
+```json
+{
+  "issueIdOrKey": "IDS-10314",
+  "searchTerms": ["test", "procedure", "story points"]
+}
+```
+
 ## JQL Examples
 
 Common JQL queries you can use with `jira_search_issues`:
@@ -437,7 +489,7 @@ The server provides detailed error messages for common issues:
 - This is a read-only implementation (no issue creation/updates)
 - Rate limits are determined by your JIRA instance
 - Some JIRA Cloud features may not be available on JIRA Server/Data Center
-- Custom fields are returned but not specially handled
+- Field discovery tools use the editmeta endpoint which returns fields available for editing
 
 ## Future Enhancements
 
@@ -448,7 +500,6 @@ Planned features for future releases:
 - Webhook support
 - Advanced filtering and field customization
 - Bulk operations
-- Custom field management
 - Sprint and board operations (JIRA Software)
 - Service desk operations (JIRA Service Management)
 
